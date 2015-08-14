@@ -1,114 +1,72 @@
 /**
-  ******************************************************************************
-  * @file    lcd.h
-  * @author  MCD Application Team
-  * @version V2.2.0
-  * @date    09-February-2015
-  * @brief   This file contains all the functions prototypes for the LCD driver.   
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT(c) 2015 STMicroelectronics</center></h2>
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */ 
+ * @file lcd.h
+ * @brief LCD low level initialisation pixel drawing functions
+ */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __LCD_H
-#define __LCD_H
+#ifndef _LCD_H_
+#define _LCD_H_
 
-#ifdef __cplusplus
- extern "C" {
-#endif 
+#include "stm32f4xx_hal.h"
 
-/* Includes ------------------------------------------------------------------*/
-#include <stdint.h>
-   
-/** @addtogroup BSP
-  * @{
-  */
+/*
+ * LCD dimensions and timing constants
+ */
+#define LCD_WIDTH		800
+#define LCD_HEIGHT		480
 
-/** @addtogroup Components
-  * @{
-  */
+#define HFP 	16
+#define HSYNC 	96
+#define HBP 	88
 
-/** @addtogroup LCD
-  * @{
-  */
- 
-/** @defgroup LCD_Exported_Types
-  * @{
-  */
+#define VFP 	10
+#define VSYNC 	3
+#define VBP 	33
 
-/** @defgroup LCD_Driver_structure  LCD Driver structure
-  * @{
-  */
-typedef struct
-{
-  void     (*Init)(void);
-  uint16_t (*ReadID)(void);
-  void     (*DisplayOn)(void);
-  void     (*DisplayOff)(void);
-  void     (*SetCursor)(uint16_t, uint16_t);
-  void     (*WritePixel)(uint16_t, uint16_t, uint16_t);
-  uint16_t (*ReadPixel)(uint16_t, uint16_t);
-  
-   /* Optimized operation */
-  void     (*SetDisplayWindow)(uint16_t, uint16_t, uint16_t, uint16_t);
-  void     (*DrawHLine)(uint16_t, uint16_t, uint16_t, uint16_t);
-  void     (*DrawVLine)(uint16_t, uint16_t, uint16_t, uint16_t);
-  
-  uint16_t (*GetLcdPixelWidth)(void);
-  uint16_t (*GetLcdPixelHeight)(void);
-  void     (*DrawBitmap)(uint16_t, uint16_t, uint8_t*);
-  void     (*DrawRGBImage)(uint16_t, uint16_t, uint16_t, uint16_t, uint8_t*);
-}LCD_DrvTypeDef;    
-/**
-  * @}
-  */
+#define ACTIVE_W (HSYNC + LCD_WIDTH + HBP - 1)
+#define ACTIVE_H (VSYNC + LCD_HEIGHT + VBP - 1)
+
+#define TOTAL_WIDTH  (HSYNC + HBP + LCD_WIDTH + HFP - 1)
+#define TOTAL_HEIGHT (VSYNC + VBP + LCD_HEIGHT + VFP - 1)
 
 /**
-  * @}
-  */
+ * @brief LCD Screen handle
+ */
+extern LTDC_HandleTypeDef LtdcHandle;
 
 /**
-  * @}
-  */
+ * @brief Configures the LCD GPIOs
+ * @param hltdc LCD Handle
+ */
+void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc);
 
 /**
-  * @}
-  */
+ * @brief Configures lcd screen
+ */
+void LCD_Config(void);
 
 /**
-  * @}
-  */
+ * @brief Draws a pixel in the screen framebuffer
+ * @param Xpos the pixel's x position
+ * @param Ypos the pixel's y position
+ * @param RGB_Code the pixel's color
+ */
+void Put_Pixel(uint16_t Xpos, uint16_t Ypos, uint16_t RGB_Code);
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ * @brief Renders a glyph from a given array of uint16_t
+ * @param glyph pointer to start of the glyph
+ * @param width width of the glyph by uint16_t
+ * @param height height of the glyph by pixel
+ * @param x x position where to put the glyph
+ * @param y y position where to put the glyph
+ * @param color the glyph's color
+ */
+void Render_Glyph(const uint8_t *glyph, uint16_t width, uint16_t height,
+					uint16_t x, uint16_t y, uint16_t ct, uint16_t cf);
 
-#endif /* __LCD_H */
+/**
+ * Double buffering
+ */
+void switch_buffer(void);
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#endif // EOF

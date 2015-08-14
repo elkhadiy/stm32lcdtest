@@ -7,11 +7,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-struct __FILE {
-	int dummy;
-};
-
-FILE __stdout;
 
 void _exit(int n) {
 label: goto label;       /* plz don't kill me */
@@ -63,24 +58,6 @@ void * _sbrk(ptrdiff_t incr)
   return base;          /*  Return pointer to start of new heap area.   */
 }
 
-extern void Put_Char(char c);
-
-int _write(int file, char *ptr, int len)
-{
-	int index;
-	for (index = 0; index < len; index++)
-	{
-		Put_Char(*ptr++);
-	}
-	return len;
-}
-
-int fputc(int ch, FILE *fd)
-{
-	char c = ch;
-	Put_Char(c);
-	return ch;
-}
 
 int _close(int file)
 {
