@@ -90,11 +90,8 @@ void put_cursor(uint32_t lig, uint32_t col)
  */
 void clear_screen(void)
 {
-	for (uint32_t i = 0; i < LIN; i ++) {
-		for (uint32_t j = 0; j < COL; j++) {
-			putc_at(i,j,' ',ct, cf);
-		}
-	}
+	pos_curseur = 0;
+	memset((void*)0xD0000000, 0, (size_t)800*480*2);
 }
 
 /**

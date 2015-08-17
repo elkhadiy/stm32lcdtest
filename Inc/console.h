@@ -19,7 +19,7 @@
 #define CLEAR_RED 12
 #define CLEAR_MAGENTA 13
 #define YELLOW 14
-#define WHITE 0b1111101111000000
+#define WHITE 0b1111111111111111
 
 // Console dimentions
 #define COL 72

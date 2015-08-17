@@ -220,7 +220,13 @@ void Render_Glyph(const uint8_t *glyph, uint16_t width, uint16_t height,
 		{
 			for (int k = 0; k < 8; k++)
 			{
-				Put_Pixel(x+8*j+k, y+i, (glyph[i*width+j] & (0x80 >> k)) ? ct : cf);
+				//Put_Pixel(x+8*j+k, y+i, (glyph[i*width+j] & (0x80 >> k)) ? ct : cf);
+				if (glyph[i*width+j] & (0x80 >> k))
+				{
+					Put_Pixel(x+8*j+k, y+i, ct);
+				} else {
+					Put_Pixel(x+8*j+k, y+i, cf);
+				}
 			}
 		}
 	}
