@@ -36,7 +36,9 @@
 #include "stm32f4xx_it.h"
 
 /* USER CODE BEGIN 0 */
+extern DMA2D_HandleTypeDef Dma2dHandle;
 /* USER CODE END 0 */
+uint32_t time = 0;
 
 /* External variables --------------------------------------------------------*/
 
@@ -50,7 +52,7 @@
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+  time++;
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
@@ -67,7 +69,13 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
-
+/**
+ * @brief This function handles DMA2D Handler
+ */
+void DMA2D_IRQHandler(void)
+{
+	HAL_DMA2D_IRQHandler(&Dma2dHandle);	
+}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

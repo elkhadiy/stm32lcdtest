@@ -24,6 +24,7 @@
 #define __DEBUG_H__
 
 #include <stdarg.h>
+#include <console.h>
 
 int printf(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 int vprintf(const char *__format, va_list __vl) __attribute__((format (printf, 1, 0)));
@@ -48,5 +49,7 @@ extern void panic(const char *fmt, ...) __attribute__((noreturn, format (printf,
 			__LINE__), 0)))
 
 #endif
+
+#define LOG(...) console_change_color(RED, BLACK); printf("%02i:%02i:%02i >> ", time/3600000, (time/60000) % 60, (time/1000)%60); console_change_color(WHITE, BLACK); printf(__VA_ARGS__);
 
 #endif

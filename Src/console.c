@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include "stdio.h"
+#include "stm32f4xx_hal.h"
 
 #include "lcd.h"
 #include "font16.h"
@@ -85,13 +86,31 @@ void put_cursor(uint32_t lig, uint32_t col)
 	cur_pos_lin = lig;
 }
 
+extern DMA2D_HandleTypeDef Dma2dHandle;
+
 /**
  * Actually zeroes the VIDEO RAM.. normally
  */
 void clear_screen(void)
 {
+	
 	pos_curseur = 0;
-	memset((void*)0xD0000000, 0, (size_t)800*480*2);
+	//memset((void*)0xD0000000, 0, (size_t)800*480*2);
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_R2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, BLACK, (uint32_t)LCD_BUFFER_START, LCD_WIDTH, LCD_HEIGHT);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
 }
 
 /**
@@ -104,6 +123,44 @@ void defilement(void)
 	// initialise the last line
 	for (uint16_t j = 0; j < COL; j++)
 		putc_at(LIN-1, j, ' ', ct, cf);
+	
+/*
+	uint32_t secondary_buffer = get_secondary_buff_adr();
+	
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_M2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, secondary_buffer+LCD_WIDTH*font_px_h*2, secondary_buffer, LCD_WIDTH, LCD_HEIGHT-font_px_h);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
+	
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_R2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, BLACK, secondary_buffer+LCD_WIDTH*(LCD_HEIGHT-font_px_h)*2, LCD_WIDTH, font_px_h);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
+
+	switch_buffer();
+//*/
 }
 
 

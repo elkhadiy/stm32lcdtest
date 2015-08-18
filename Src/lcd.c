@@ -12,6 +12,11 @@
  */
 LTDC_HandleTypeDef LtdcHandle;
 
+/**
+ * @brief DMA2D handle
+ */
+DMA2D_HandleTypeDef Dma2dHandle;
+
 /*
  * Dumb error handler. TODO make this more streamlined
  */
@@ -97,6 +102,79 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc)
   HAL_GPIO_Init(GPIOG, &GPIO_Init_Structure);
 }
 
+/**
+ * @brief Configures the dma2d parameters
+ * DO NOT USE THIS, THIS IS DUMB
+ */
+void DMA2D_Config(void)
+{
+  /* Configure the DMA2D Mode, Color Mode and output offset */
+  Dma2dHandle.Init.Mode         = DMA2D_M2M;
+  Dma2dHandle.Init.ColorMode    = DMA2D_RGB565;
+  Dma2dHandle.Init.OutputOffset = 0x0;
+
+  /* DMA2D Callbacks Configuration */
+  Dma2dHandle.XferCpltCallback  = DMA2D_TransferComplete;
+  Dma2dHandle.XferErrorCallback = DMA2D_TransferError;
+  
+  /* Foreground Configuration */
+  Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+  Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+  Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+  Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+
+  Dma2dHandle.Instance          = DMA2D; 
+  
+  /* DMA2D Initialization */
+  if(HAL_DMA2D_Init(&Dma2dHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }
+  
+  if(HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }  
+}
+
+
+/**
+ * @brief DMA2D error callback
+ */
+void DMA2D_TransferError(DMA2D_HandleTypeDef* Dma2dHandle)
+{
+
+}
+
+/**
+ * @ brief DMA2D transfer complete callback
+ */
+void DMA2D_TransferComplete(DMA2D_HandleTypeDef* Dma2dHandle)
+{
+
+}
+
+/**
+  * @brief DMA2D MSP Initialization 
+  *        This function configures the hardware resources used in this example: 
+  *           - Peripheral's clock enable
+  *           - Peripheral's GPIO Configuration  
+  * @param hdma2d: DMA2D handle pointer
+  * @retval None
+  */
+void HAL_DMA2D_MspInit(DMA2D_HandleTypeDef *hdma2d)
+{  
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  __HAL_RCC_DMA2D_CLK_ENABLE();  
+  
+  /*##-2- NVIC configuration  ################################################*/  
+  /* NVIC configuration for DMA2D transfer complete interrupt */
+  HAL_NVIC_SetPriority(DMA2D_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2D_IRQn);  
+}
+
 
 /**
  * @brief Configures lcd screen
@@ -154,7 +232,7 @@ void LCD_Config(void)
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
   
   /* Start Address configuration : frame buffer is located at FLASH memory */
-  pLayerCfg.FBStartAdress = (uint32_t)0xD0000000;
+  pLayerCfg.FBStartAdress = (uint32_t)LCD_BUFFER_START;
   
   /* Alpha constant (255 totally opaque) */
   pLayerCfg.Alpha = 255;
@@ -189,6 +267,9 @@ void LCD_Config(void)
 
   /* Place the Background Layer */
   HAL_LTDC_SetWindowPosition(&LtdcHandle, 0, 0, 0); 
+
+  /* Make the second buffer*/
+  init_second_buffer();
 }
 
 /**
@@ -199,7 +280,8 @@ void LCD_Config(void)
  */
 void Put_Pixel(uint16_t Xpos, uint16_t Ypos, uint16_t RGB_Code)
 {
-  *(__IO uint32_t*) (LtdcHandle.LayerCfg[0].FBStartAdress + (2*(Ypos*800 + Xpos))) = RGB_Code;
+  *(__IO uint32_t*) (BUFFER + (2*(Ypos*800 + Xpos))) = RGB_Code;
+  *(__IO uint32_t*) (BUFFER1 + (2*(Ypos*800 + Xpos))) = RGB_Code;
 }
 
 /**
@@ -232,18 +314,65 @@ void Render_Glyph(const uint8_t *glyph, uint16_t width, uint16_t height,
 	}
 }
 
-#define BUFFER  0xD0000000
-#define BUFFER1 0xD0000000+800*480*2
 
 static bool cur_is_buffer0 = true;
+
+uint32_t get_active_buff_adr(void)
+{
+	return cur_is_buffer0 ? BUFFER : BUFFER1;
+}
+
+uint32_t get_secondary_buff_adr(void)
+{
+	return cur_is_buffer0 ? BUFFER1 : BUFFER;
+}
 
 /**
  * Double buffering
  */
 void switch_buffer(void)
 {
-	LtdcHandle.LayerCfg[0].FBStartAdress = cur_is_buffer0 ? BUFFER1 : BUFFER;
-	cur_is_buffer0 = ~cur_is_buffer0;
+    uint32_t new_buffer = cur_is_buffer0 ? BUFFER1 : BUFFER;
+	uint32_t old_buffer = cur_is_buffer0 ? BUFFER : BUFFER1;
+
+	HAL_LTDC_SetAddress(&LtdcHandle, new_buffer, 0);
+	
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_M2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, new_buffer, old_buffer, LCD_WIDTH, LCD_HEIGHT);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
+
+	cur_is_buffer0 = !cur_is_buffer0;
+}
+
+void init_second_buffer(void)
+{
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_M2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, BUFFER, BUFFER1, LCD_WIDTH, LCD_HEIGHT);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
 }
 
 // EOF

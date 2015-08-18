@@ -51,6 +51,7 @@
 
 /* USER CODE BEGIN PV */
 extern I2C_HandleTypeDef I2cHandle;
+extern uint32_t time;
 #define RXBUFFERSIZE 31
 /* USER CODE END PV */
 
@@ -109,16 +110,54 @@ int main(void)
   HAL_I2C_MspInit(&I2cHandle);
   I2C_Config(&I2cHandle);
   printf("STM32F4 Firmware v1.6.0\n");
+
+/*
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_R2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, GREEN, BUFFER, LCD_WIDTH, LCD_HEIGHT);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
+
+
+	HAL_DMA2D_DeInit(&Dma2dHandle);
+
+	Dma2dHandle.Init.Mode = DMA2D_R2M;
+	Dma2dHandle.Init.ColorMode = DMA2D_RGB565;
+	Dma2dHandle.Init.OutputOffset = 0x0;
+	Dma2dHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	Dma2dHandle.LayerCfg[0].InputAlpha = 0xFF;
+	Dma2dHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+	Dma2dHandle.LayerCfg[0].InputOffset = 0x0;
+	Dma2dHandle.Instance = DMA2D; 
+
+	HAL_DMA2D_Init(&Dma2dHandle);
+	HAL_DMA2D_ConfigLayer(&Dma2dHandle, 0);
+	HAL_DMA2D_Start(&Dma2dHandle, RED, BUFFER1, LCD_WIDTH, LCD_HEIGHT);
+	HAL_DMA2D_PollForTransfer(&Dma2dHandle, 200);
+//*/
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+/*
   printf("Testing I2C Tactile\n");
 
   uint8_t aRxBuffer[RXBUFFERSIZE];
   uint8_t nonITMode[] = {0xA4, 0x01};
   uint8_t normalOP[] = {0x00, 0x00};
-
+//*/
 /*
   while(HAL_I2C_Master_Transmit(&I2cHandle, (uint16_t)I2C_ADDRESS, (uint8_t*)normalOP, 2, I2C_TIMEOUT)!= HAL_OK)
   {
@@ -142,54 +181,55 @@ int main(void)
   }
 //*/
  
+/*
   HAL_GPIO_WritePin(I2Cx_WAKEUP_GPIO_PORT, I2Cx_WAKEUP_PIN, GPIO_PIN_RESET);
   HAL_Delay(500); // for screen touch
   HAL_GPIO_WritePin(I2Cx_WAKEUP_GPIO_PORT, I2Cx_WAKEUP_PIN, GPIO_PIN_SET);
-  
-
+//*/
   while (1)
   {	
   /* USER CODE END WHILE */
   /* USER CODE BEGIN 3 */
+  //clear_screen();
+  //printf("%is >> \n", time/1000);
+  LOG("hey!\n");
+//HAL_Delay(1000);	
+//switch_buffer();
+  HAL_Delay(500);
+  //HAL_LTDC_SetAddress(&LtdcHandle, BUFFER1, 0);
 
-  uint8_t didit = 0;
-  
+/*  
   if (!HAL_GPIO_ReadPin(I2Cx_IT_GPIO_PORT, I2Cx_IT_PIN))
   {
-//*
-	  if (!didit) {
-		  while(HAL_I2C_Master_Receive(&I2cHandle, (uint16_t)I2C_ADDRESS, (uint8_t*)aRxBuffer, RXBUFFERSIZE, I2C_TIMEOUT)!= HAL_OK)
+	  while(HAL_I2C_Master_Receive(&I2cHandle, (uint16_t)I2C_ADDRESS, (uint8_t*)aRxBuffer, RXBUFFERSIZE, I2C_TIMEOUT)!= HAL_OK)
+	  {
+		  //printf("Trying a Master Transmit\n");
+		  if (HAL_I2C_GetError(&I2cHandle) != HAL_I2C_ERROR_AF)
 		  {
-			  //printf("Trying a Master Transmit\n");
-			  if (HAL_I2C_GetError(&I2cHandle) != HAL_I2C_ERROR_AF)
-			  {
-				  printf("Time out occured :o\n");
-				  Error_Handler();
-			  }
+			  printf("Time out occured :o\n");
+			  Error_Handler();
 		  }
-
-		  clear_screen();
-
-		  printf("Device Mode  [2..0] : %s\n", b2b((aRxBuffer[0]>>4) & 0b00000111));
-		  printf("Gesture ID   [7..0] : %x\n", aRxBuffer[1]);
-		  printf("Touch Points [2..0] : %s\n", b2b(aRxBuffer[2] & 0b00000111));
-
-		  int j = 1;
-		  for (int i = 3; i < 0x1F; i += 6)
-		  {
-			  printf("Touch %i EV   [1..0] : %s\n", j, b2b((aRxBuffer[i] >> 6) & 0b00000011));
-			  printf("Touch %i ID   [3..0] : %s\n", j, b2b((aRxBuffer[i+2] >> 4) & 0b00001111));
-			  uint16_t x = (((uint16_t)(aRxBuffer[i] & 0x0F)) << 8) | ((uint16_t)aRxBuffer[i+1]);
-			  uint16_t y = (((uint16_t)(aRxBuffer[i+2] & 0x0F)) << 8) | ((uint16_t)aRxBuffer[i+3]);
-			  printf("Touch %i (X,Y)       : (%i, %i)\n", j, x, y);
-			  printf("Touch %i (X,Y)       : (%x, %x)\n", j, x, y);
-			  j++;
-		  }
-		didit = 1;
 	  }
-	  //*/
-  }
 
+	  clear_screen();
+
+	  printf("Device Mode  [2..0] : %s\n", b2b((aRxBuffer[0]>>4) & 0b00000111));
+	  printf("Gesture ID   [7..0] : %x\n", aRxBuffer[1]);
+	  printf("Touch Points [2..0] : %s\n", b2b(aRxBuffer[2] & 0b00000111));
+
+	  int j = 1;
+	  for (int i = 3; i < 0x1F; i += 6)
+	  {
+		  printf("Touch %i EV   [1..0] : %s\n", j, b2b((aRxBuffer[i] >> 6) & 0b00000011));
+		  printf("Touch %i ID   [3..0] : %s\n", j, b2b((aRxBuffer[i+2] >> 4) & 0b00001111));
+		  uint16_t x = (((uint16_t)(aRxBuffer[i] & 0x0F)) << 8) | ((uint16_t)aRxBuffer[i+1]);
+		  uint16_t y = (((uint16_t)(aRxBuffer[i+2] & 0x0F)) << 8) | ((uint16_t)aRxBuffer[i+3]);
+		  printf("Touch %i (X,Y)       : (%i, %i)\n", j, x, y);
+		  printf("Touch %i (X,Y)       : (%x, %x)\n", j, x, y);
+		  j++;
+	  }
+  }
+//*/
 }
   
   /* USER CODE END 3 */

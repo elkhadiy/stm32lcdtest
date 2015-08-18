@@ -28,10 +28,21 @@
 #define TOTAL_WIDTH  (HSYNC + HBP + LCD_WIDTH + HFP - 1)
 #define TOTAL_HEIGHT (VSYNC + VBP + LCD_HEIGHT + VFP - 1)
 
+#define LCD_BUFFER_START 0xD0000000
+
+#define BUFFER         0xD0000000
+#define BUFFER1_OFFSET 800*480*2
+#define BUFFER1        (BUFFER + BUFFER1_OFFSET)
+
 /**
  * @brief LCD Screen handle
  */
 extern LTDC_HandleTypeDef LtdcHandle;
+
+/**
+ * @brief DMA2D handle
+ */
+extern DMA2D_HandleTypeDef Dma2dHandle;
 
 /**
  * @brief Configures the LCD GPIOs
@@ -40,9 +51,30 @@ extern LTDC_HandleTypeDef LtdcHandle;
 void HAL_LTDC_MspInit(LTDC_HandleTypeDef *hltdc);
 
 /**
- * @brief Configures lcd screen
+ * @brief Configures the DMA2D CLock
+ * @param hdma2d DMA2D handle
+ */
+void HAL_DMA2D_MspInit(DMA2D_HandleTypeDef *hdma2d);
+
+/**
+ * @brief Configures lcd screen parameters
  */
 void LCD_Config(void);
+
+/**
+ * @brief Configures the dma2d parameters
+ */
+void DMA2D_Config(void);
+
+/**
+ * @brief DMA2D error callback
+ */
+void DMA2D_TransferError(DMA2D_HandleTypeDef* Dma2dHandle);
+
+/**
+ * @ brief DMA2D transfer complete callback
+ */
+void DMA2D_TransferComplete(DMA2D_HandleTypeDef* Dma2dHandle);
 
 /**
  * @brief Draws a pixel in the screen framebuffer
@@ -68,5 +100,20 @@ void Render_Glyph(const uint8_t *glyph, uint16_t width, uint16_t height,
  * Double buffering
  */
 void switch_buffer(void);
+
+/**
+ * prepares a second buffer for double buffered scrolling
+ */
+void init_second_buffer(void);
+
+/**
+ * does what it says
+ */
+uint32_t get_active_buff_adr(void);
+
+/**
+ * same
+ */
+uint32_t get_secondary_buff_adr(void);
 
 #endif // EOF
