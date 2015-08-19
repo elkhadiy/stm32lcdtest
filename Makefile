@@ -55,6 +55,14 @@ SRCS += $(wildcard Drivers/STM32F4xx_HAL_Driver/Src/*.c)
 
 ######## - STM32F4xx Drivers
 
+#################
+# STemWin
+#################
+CFLAGS += -IMiddlewares/GUI/Config
+CFLAGS += -IMiddlewares/GUI/inc
+LIBS   += -LMiddlewares/GUI/Lib
+LDFLAGS += -lSTemWin522_CM4_GCC
+SRCS += $(wildcard Middlewares/GUI/Config/*.c)
 
 ########################
 # specific to STM32F429
@@ -84,7 +92,7 @@ proj: $(PROJ_NAME).elf
 
 $(PROJ_NAME).elf: $(SRCS)
 	@echo "Compiling project....."
-	@$(CC) $(CFLAGS) $(DEFS) $(LDFLAGS) $^ -o $@
+	@$(CC) $(CFLAGS) $(DEFS) $(LIBS) $^ -o $@ $(LDFLAGS)
 	@$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
 	@$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
 	@echo "DONE"

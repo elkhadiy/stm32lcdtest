@@ -40,6 +40,8 @@
 #include "stm32f4xx.h"
 
 #include "lcd.h"
+#include "GUI.h"
+#include "BUTTON.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -109,7 +111,19 @@ int main(void)
   clear_screen();
   HAL_I2C_MspInit(&I2cHandle);
   I2C_Config(&I2cHandle);
-  printf("STM32F4 Firmware v1.6.0\n");
+
+
+  //RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
+  //RCC->AHB1ENR |= RCC_AHB1ENR_CRCEN;
+  __HAL_RCC_CRC_CLK_ENABLE();
+  GUI_Init();
+  GUI_SetColor(GUI_WHITE);
+  GUI_SetFont(GUI_FONT_24B_ASCII);
+  GUI_DrawRoundedFrame(5, 5, 795, 32, 5, 2);
+  GUI_DispStringAt("Terminal Log v1.0", 10, 7);
+  GUI_DrawRoundedFrame(5, 34, 795, 475, 5, 2);
+  GUI_DispStringAt("elkhadiy@STM32F4 $ ", 10, 36);
+  //printf("STM32F4 Firmware v1.6.0\n");
 
 /*
 	HAL_DMA2D_DeInit(&Dma2dHandle);
@@ -192,7 +206,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
   //clear_screen();
   //printf("%is >> \n", time/1000);
-  LOG("hey!\n");
+  //LOG("hey!\n");
 //HAL_Delay(1000);	
 //switch_buffer();
   HAL_Delay(500);
@@ -309,7 +323,9 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
-  HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct); 
+  HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
+  // 
 }
 
 

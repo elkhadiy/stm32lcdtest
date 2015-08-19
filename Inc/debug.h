@@ -50,6 +50,6 @@ extern void panic(const char *fmt, ...) __attribute__((noreturn, format (printf,
 
 #endif
 
-#define LOG(...) console_change_color(RED, BLACK); printf("%02i:%02i:%02i >> ", time/3600000, (time/60000) % 60, (time/1000)%60); console_change_color(WHITE, BLACK); printf(__VA_ARGS__);
+#define LOG(...) console_change_color(RED, BLACK); printf("%02lu:%02lu:%02lu >> ", time/3600000, (time/60000) % 60, (time/1000)%60); console_change_color(WHITE, BLACK); printf(__VA_ARGS__);
 
 #endif
